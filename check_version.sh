@@ -13,6 +13,7 @@ NEXT_VERSION=$(curl                              \
   | jq --raw-output '.latest.version')
 
 jq --null-input                            \
+   --compact-output                        \
    --arg version "$CURRENT_VERSION"        \
    --arg available_version "$NEXT_VERSION" \
    '{type: "software_version", software: "metabase", $version, $available_version}'
