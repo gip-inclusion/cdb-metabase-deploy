@@ -1,16 +1,18 @@
 #!/bin/bash
 
-SESSION_ID=$(jq --null-input \
-    '{username:$ENV.METABASE_USER, password:$ENV.METABASE_PASSWORD}' |
-  curl                                      \
-  --data "@-"                               \
-  --header "Content-Type: application/json" \
-  --header "Accept: application/json"       \
-  --silent                                  \
-  "https://$METABASE_HOST/api/session" | jq --raw-output '.id')
+CURRENT_VERSION=$(curl                            \
+  --header "Accept: application/json"             \
+  --silent                                        \
+  "https://$METABASE_HOST/api/session/properties" \
+  | jq --raw-output '.version.tag')
 
-curl                                           \
-  --header "Accept: application/json"          \
-  --header "X-Metabase-Session: ${SESSION_ID}" \
-  --silent                                     \
-  "https://$METABASE_HOST/api/session/properties" | jq --compact-output '{type: "software_version", software: "metabase", version: .version.tag, available_version: ."version-info".latest.version}'
+NEXT_VERSION=$(curl                              \
+  --header "Accept: application/json"            \
+  --silent                                       \
+  "http://static.metabase.com/version-info.json" \
+  | jq --raw-output '.latest.version')
+
+jq --null-input                            \
+   --arg version "$CURRENT_VERSION"        \
+   --arg available_version "$NEXT_VERSION" \
+   '{type: "software_version", software: "metabase", $version, $available_version}'
